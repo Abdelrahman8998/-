@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>التقاط تلقائي للصورة</title>
+  <title>كاميرا</title>
   <style>
     body {
-      text-align: center;
-      font-family: sans-serif;
-      background-color: #f8f9fa;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #000;
     }
     video, canvas {
-      width: 300px;
-      height: 400px;
+      display: none;
+    }
+    canvas {
+      display: block;
       border-radius: 10px;
-      margin-top: 20px;
-      border: 2px solid #555;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
     }
   </style>
 </head>
 <body>
-  <h2>يتم التقاط الصورة تلقائيًا...</h2>
-  <video id="video" autoplay playsinline style="display:none;"></video>
-  <canvas id="canvas"></canvas>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" width="300" height="400"></canvas>
 
   <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
 
-    // تشغيل الكاميرا الأمامية
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
       audio: false
@@ -38,19 +40,16 @@
     .then(stream => {
       video.srcObject = stream;
 
-      // عند بدء تشغيل الفيديو، التقط صورة تلقائيًا
       video.onloadedmetadata = () => {
-        // انتظر لحظات قصيرة للتأكد من أن الكاميرا بدأت فعليًا
         setTimeout(() => {
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // إيقاف الكاميرا بعد الالتقاط
           stream.getTracks().forEach(track => track.stop());
-        }, 1000); // 1 ثانية كافية عادة
+          canvas.style.display = 'block';
+        }, 1000);
       };
     })
     .catch(err => {
-      alert("فشل الوصول إلى الكاميرا: " + err.message);
+      console.error("فشل الوصول إلى الكاميرا:", err.message);
     });
   </script>
 </body>
