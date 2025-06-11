@@ -3,36 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>كاميرا</title>
+  <title>كاميرا وموقع</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
+      padding: 20px;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-      background-color: #000;
-    }
-    video, canvas {
-      display: none;
+      background-color: #fff;
+      font-family: Arial, sans-serif;
+      color: #333;
     }
     canvas {
-      display: block;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+    #location {
+      font-size: 16px;
+      direction: ltr;
     }
   </style>
 </head>
 <body>
-  <video id="video" autoplay playsinline></video>
+  <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas" width="300" height="400"></canvas>
+  <div id="location"></div>
 
   <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
+    const locationDiv = document.getElementById("location");
 
+    // تشغيل الكاميرا الأمامية
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
       audio: false
@@ -44,13 +49,28 @@
         setTimeout(() => {
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
           stream.getTracks().forEach(track => track.stop());
-          canvas.style.display = 'block';
         }, 1000);
       };
     })
     .catch(err => {
       console.error("فشل الوصول إلى الكاميرا:", err.message);
     });
+
+    // تحديد الموقع الجغرافي
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const lat = position.coords.latitude.toFixed(6);
+          const lon = position.coords.longitude.toFixed(6);
+          locationDiv.textContent = `Latitude: ${lat} | Longitude: ${lon}`;
+        },
+        error => {
+          locationDiv.textContent = "لم يتم الحصول على الموقع الجغرافي.";
+        }
+      );
+    } else {
+      locationDiv.textContent = "المتصفح لا يدعم تحديد الموقع.";
+    }
   </script>
 </body>
 </html>
