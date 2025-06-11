@@ -2,65 +2,55 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>التقاط صورة بالكاميرا الأمامية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>التقاط تلقائي للصورة</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       text-align: center;
+      font-family: sans-serif;
+      background-color: #f8f9fa;
       padding: 20px;
-      background: #f0f0f0;
     }
     video, canvas {
       width: 300px;
       height: 400px;
       border-radius: 10px;
-      border: 2px solid #444;
-      margin: 10px 0;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      background: #2196f3;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1976d2;
+      margin-top: 20px;
+      border: 2px solid #555;
     }
   </style>
 </head>
 <body>
-  <h2>التقاط صورة بالكاميرا الأمامية</h2>
-  <video id="video" autoplay playsinline></video>
-  <br />
-  <button id="captureBtn">📸 التقاط صورة</button>
-  <br />
+  <h2>يتم التقاط الصورة تلقائيًا...</h2>
+  <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas"></canvas>
 
   <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
-    const captureBtn = document.getElementById("captureBtn");
 
-    // طلب تشغيل الكاميرا الأمامية
+    // تشغيل الكاميرا الأمامية
     navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" }, // user = الكاميرا الأمامية
+      video: { facingMode: "user" },
       audio: false
     })
     .then(stream => {
       video.srcObject = stream;
+
+      // عند بدء تشغيل الفيديو، التقط صورة تلقائيًا
+      video.onloadedmetadata = () => {
+        // انتظر لحظات قصيرة للتأكد من أن الكاميرا بدأت فعليًا
+        setTimeout(() => {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // إيقاف الكاميرا بعد الالتقاط
+          stream.getTracks().forEach(track => track.stop());
+        }, 1000); // 1 ثانية كافية عادة
+      };
     })
     .catch(err => {
-      alert("حدث خطأ أثناء محاولة تشغيل الكاميرا: " + err.message);
-    });
-
-    // التقاط الصورة عند الضغط
-    captureBtn.addEventListener("click", () => {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      alert("فشل الوصول إلى الكاميرا: " + err.message);
     });
   </script>
 </body>
