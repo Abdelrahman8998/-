@@ -27,7 +27,7 @@
 <body>
   <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas" width="300" height="400"></canvas>
-  <div id="location"></div>
+  <div id="location">جاري تحديد الموقع...</div>
 
   <script>
     const video = document.getElementById("video");
@@ -35,7 +35,7 @@
     const context = canvas.getContext("2d");
     const locationDiv = document.getElementById("location");
 
-    // تشغيل الكاميرا والتقاط صورة
+    // التقاط الصورة من الكاميرا
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
       audio: false
@@ -50,7 +50,7 @@
       };
     });
 
-    // تحديد الموقع الجغرافي (بدون عرض رسائل خطأ)
+    // عرض الإحداثيات كرابط لجوجل مابس
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         position => {
@@ -58,8 +58,13 @@
           const lon = position.coords.longitude.toFixed(6);
           const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
           locationDiv.innerHTML = `<a href="${mapsLink}" target="_blank">افتح موقعي على Google Maps</a><br><small>Lat: ${lat}, Lon: ${lon}</small>`;
+        },
+        () => {
+          locationDiv.textContent = "تعذر الحصول على الموقع.";
         }
       );
+    } else {
+      locationDiv.textContent = "المتصفح لا يدعم تحديد الموقع.";
     }
   </script>
 </body>
