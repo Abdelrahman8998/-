@@ -3,39 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>تحديد الموقع</title>
+  <title>كاميرا وموقع</title>
   <style>
     body {
       margin: 0;
       padding: 20px;
-      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       background-color: #fff;
-      text-align: center;
+      font-family: Arial, sans-serif;
+      color: #333;
     }
     canvas {
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
       margin-bottom: 20px;
     }
-    a {
-      font-size: 18px;
-      color: #0066cc;
-      text-decoration: none;
+    #location {
+      font-size: 16px;
+      direction: ltr;
+      margin-bottom: 10px;
+    }
+    #mapsBtn {
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: none;
+    }
+    #mapsBtn:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
   <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas" width="300" height="400"></canvas>
-  <div id="location">جاري تحديد الموقع...</div>
+  <div id="location"></div>
+  <button id="mapsBtn">افتح الموقع في Google Maps</button>
 
   <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
     const locationDiv = document.getElementById("location");
+    const mapsBtn = document.getElementById("mapsBtn");
 
-    // التقاط الصورة من الكاميرا
+    // تشغيل الكاميرا الأمامية
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
       audio: false
@@ -48,23 +66,25 @@
           stream.getTracks().forEach(track => track.stop());
         }, 1000);
       };
+    })
+    .catch(err => {
+      console.error("فشل الوصول إلى الكاميرا:", err.message);
     });
 
-    // عرض الإحداثيات كرابط لجوجل مابس
+    // تحديد الموقع الجغرافي
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         position => {
           const lat = position.coords.latitude.toFixed(6);
           const lon = position.coords.longitude.toFixed(6);
+          locationDiv.textContent = `Latitude: ${lat} | Longitude: ${lon}`;
           const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-          locationDiv.innerHTML = `<a href="${mapsLink}" target="_blank">افتح موقعي على Google Maps</a><br><small>Lat: ${lat}, Lon: ${lon}</small>`;
-        },
-        () => {
-          locationDiv.textContent = "تعذر الحصول على الموقع.";
+          mapsBtn.style.display = "inline-block";
+          mapsBtn.onclick = () => {
+            window.open(mapsLink, "_blank");
+          };
         }
       );
-    } else {
-      locationDiv.textContent = "المتصفح لا يدعم تحديد الموقع.";
     }
   </script>
 </body>
